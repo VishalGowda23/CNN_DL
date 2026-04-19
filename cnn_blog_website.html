@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evolution of CNNs</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --black:#0a0a0a;--white:#ffffff;--gray-50:#f8f8f8;--gray-100:#f0f0f0;
+    --gray-200:#e0e0e0;--gray-400:#999;--gray-600:#555;--gray-800:#222;
+    --accent:#111;--radius:12px;
+  }
+  html{scroll-behavior:smooth;overflow-x:hidden}
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#fff;color:#111;line-height:1.6;overflow-x:hidden}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.85);backdrop-filter:blur(16px);border-bottom:1px solid #f0f0f0;transition:all .3s}
+  .nav-logo{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#111}
+  .nav-links{display:flex;gap:2rem}
+  .nav-links a{font-size:13px;color:#666;text-decoration:none;transition:color .2s}
+  .nav-links a:hover{color:#111}
+  .nav-pill{background:#111;color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:500;text-decoration:none;transition:opacity .2s}
+  .nav-pill:hover{opacity:.8;color:#fff}
+
+  /* HERO */
+  .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 2rem 4rem;position:relative;overflow:hidden;background:#fff}
+  .hero-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);background-size:60px 60px;animation:gridFade 3s ease forwards}
+  @keyframes gridFade{from{opacity:0}to{opacity:1}}
+  .hero-blob{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(0,0,0,.04) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:pulse 6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.15)}}
+  .hero-content{max-width:760px;text-align:center;position:relative;z-index:1}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;background:#f0f0f0;border:1px solid #e0e0e0;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:500;color:#555;margin-bottom:2rem;opacity:0;animation:fadeUp .8s .2s forwards}
+  .badge-dot{width:6px;height:6px;background:#111;border-radius:50%;animation:blink 2s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .hero h1{font-size:clamp(42px,7vw,84px);font-weight:700;letter-spacing:-.04em;line-height:1.05;margin-bottom:1.5rem;opacity:0;animation:fadeUp .9s .4s forwards}
+  .hero h1 span{color:#999}
+  .hero-sub{font-size:18px;color:#666;max-width:520px;margin:0 auto 2.5rem;line-height:1.7;opacity:0;animation:fadeUp .9s .6s forwards}
+  .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;opacity:0;animation:fadeUp .9s .8s forwards}
+  .btn-primary{background:#111;color:#fff;padding:14px 28px;border-radius:8px;font-size:14px;font-weight:500;text-decoration:none;transition:all .2s;border:none;cursor:pointer}
+  .btn-primary:hover{background:#333;transform:translateY(-1px)}
+  .btn-secondary{background:transparent;color:#111;padding:14px 28px;border-radius:8px;font-size:14px;font-weight:500;text-decoration:none;border:1.5px solid #222;transition:all .2s;cursor:pointer}
+  .btn-secondary:hover{background:#f0f0f0}
+  .hero-scroll{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);opacity:0;animation:fadeIn 1s 1.5s forwards}
+  .scroll-line{width:1px;height:48px;background:linear-gradient(to bottom,#111,transparent);margin:0 auto 8px;animation:scrollAnim 2s 1.5s infinite}
+  @keyframes scrollAnim{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+  .scroll-txt{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#999}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+  /* SECTIONS */
+  section{padding:100px 2rem;max-width:1100px;margin:0 auto}
+  .section-label{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#999;margin-bottom:1rem}
+  .section-label::before{content:'';display:inline-block;width:20px;height:1px;background:#999}
+  h2.section-title{font-size:clamp(32px,4vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1.1;margin-bottom:1rem}
+  p.section-desc{font-size:17px;color:#666;max-width:560px;line-height:1.75;margin-bottom:4rem}
+  .reveal{opacity:0;transform:translateY(32px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.visible{opacity:1;transform:none}
+
+  /* WHAT IS CNN */
+  .cnn-intro{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+  @media(max-width:700px){.cnn-intro{grid-template-columns:1fr}.hero h1{font-size:42px}.nav-links{display:none}}
+  .cnn-text h3{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-bottom:1rem}
+  .cnn-text p{color:#555;line-height:1.8;margin-bottom:1rem;font-size:15px}
+  .layers-viz{display:flex;flex-direction:column;gap:10px}
+  .layer-row{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#f8f8f8;border-radius:10px;border:1px solid #eee;transition:all .3s;cursor:default}
+  .layer-row:hover{background:#f0f0f0;transform:translateX(6px);border-color:#ddd}
+  .layer-icon{width:36px;height:36px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;flex-shrink:0}
+  .layer-info{flex:1}
+  .layer-name{font-size:13px;font-weight:600;margin-bottom:2px}
+  .layer-desc{font-size:12px;color:#888}
+  .layer-analogy{font-size:11px;color:#bbb;margin-left:auto;text-align:right;max-width:120px}
+
+  /* TIMELINE */
+  .timeline-section{background:#f8f8f8;margin:0;max-width:100%;padding:100px 2rem}
+  .timeline-inner{max-width:1100px;margin:0 auto}
+  .timeline{display:flex;gap:0;overflow:visible;padding-bottom:2rem;position:relative}
+  .timeline::before{content:'';position:absolute;top:40px;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,#ddd 10%,#ddd 90%,transparent)}
+  .timeline-item{flex:1;padding:0 1rem;text-align:center;position:relative}
+  .timeline-node{width:16px;height:16px;background:#fff;border:2px solid #111;border-radius:50%;margin:0 auto 1.5rem;position:relative;z-index:1;transition:all .3s;cursor:default}
+  .timeline-item:hover .timeline-node{background:#111;transform:scale(1.4)}
+  .timeline-year{font-size:11px;font-weight:700;letter-spacing:.08em;color:#999;margin-bottom:.5rem;text-transform:uppercase}
+  .timeline-model{font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:.4rem}
+  .timeline-tag{display:inline-block;font-size:10px;background:#111;color:#fff;padding:3px 8px;border-radius:4px;font-weight:500;margin-bottom:.5rem}
+  .timeline-blurb{font-size:12px;color:#888;line-height:1.5}
+  @media(max-width:700px){.timeline{flex-direction:column;gap:2rem}.timeline::before{display:none}}
+
+  /* ARCHITECTURE CARDS */
+  .arch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+  .arch-card{background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:1.75rem;transition:all .3s;cursor:default;position:relative;overflow:hidden}
+  .arch-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#111;transform:scaleX(0);transform-origin:left;transition:transform .4s}
+  .arch-card:hover{border-color:#ccc;transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,.08)}
+  .arch-card:hover::before{transform:scaleX(1)}
+  .arch-year{font-size:11px;font-weight:600;color:#999;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem}
+  .arch-name{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:.5rem}
+  .arch-desc{font-size:14px;color:#666;line-height:1.7;margin-bottom:1.25rem}
+  .arch-stat{display:flex;gap:12px;flex-wrap:wrap}
+  .stat-chip{background:#f5f5f5;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:500;color:#555}
+  .arch-innov{margin-top:1rem;padding-top:1rem;border-top:1px solid #f0f0f0}
+  .innov-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#bbb;margin-bottom:.5rem}
+  .innov-list{display:flex;flex-direction:column;gap:4px}
+  .innov-item{font-size:12px;color:#555;display:flex;gap:6px;align-items:flex-start}
+  .innov-item::before{content:'→';color:#999;flex-shrink:0;font-size:11px;margin-top:1px}
+
+  /* COMPARISON TABLE */
+  .table-wrap{overflow-x:auto;border-radius:16px;border:1px solid #e8e8e8}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:#f5f5f5;padding:14px 20px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#888;border-bottom:1px solid #e8e8e8}
+  td{padding:14px 20px;border-bottom:1px solid #f5f5f5;color:#333;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafafa}
+  .winner{font-weight:700;background:#f8f8f8}
+  .winner td:first-child{position:relative;padding-left:32px}
+  .winner td:first-child::before{content:'★';position:absolute;left:12px;color:#111;font-size:12px}
+  .bar-cell{display:flex;align-items:center;gap:10px}
+  .bar-bg{flex:1;height:5px;background:#f0f0f0;border-radius:3px;min-width:80px}
+  .bar-fill{height:100%;background:#111;border-radius:3px;transition:width 1.2s ease}
+
+  /* APPLICATIONS */
+  .apps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem}
+  .app-card{background:#f8f8f8;border-radius:12px;padding:1.5rem;border:1px solid #eee;transition:all .3s;cursor:default}
+  .app-card:hover{background:#f0f0f0;transform:translateY(-3px)}
+  .app-icon{width:42px;height:42px;background:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:18px}
+  .app-name{font-size:13px;font-weight:700;margin-bottom:.3rem;letter-spacing:-.01em}
+  .app-model{font-size:11px;color:#999;margin-bottom:.5rem;font-weight:500}
+  .app-desc{font-size:12px;color:#777;line-height:1.5}
+
+  /* GLOSSARY */
+  .gloss-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+  .gloss-card{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:1.25rem;transition:all .2s}
+  .gloss-card:hover{border-color:#bbb;transform:translateY(-2px)}
+  .gloss-term{font-size:13px;font-weight:700;margin-bottom:.4rem;display:flex;align-items:center;gap:8px}
+  .gloss-term::before{content:'';display:inline-block;width:8px;height:8px;background:#111;border-radius:2px;flex-shrink:0}
+  .gloss-def{font-size:12px;color:#777;line-height:1.6}
+
+  /* SUMMARY */
+  .summary-section{background:#111;color:#fff;margin:0;max-width:100%;padding:100px 2rem}
+  .summary-inner{max-width:1100px;margin:0 auto}
+  .summary-section .section-label{color:#555}
+  .summary-section .section-label::before{background:#555}
+  .summary-section h2{color:#fff}
+  .timeline-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:#222;border-radius:16px;overflow:hidden;margin-bottom:3rem}
+  .sum-item{background:#111;padding:1.75rem;transition:background .3s}
+  .sum-item:hover{background:#1a1a1a}
+  .sum-year{font-size:11px;color:#555;font-weight:600;letter-spacing:.08em;margin-bottom:.5rem}
+  .sum-model{font-size:18px;font-weight:700;color:#fff;margin-bottom:.4rem}
+  .sum-text{font-size:12px;color:#666;line-height:1.6}
+  .refs-section{border-top:1px solid #222;padding-top:2rem;margin-top:2rem}
+  .refs-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#555;margin-bottom:1rem}
+  .refs-list{display:flex;flex-direction:column;gap:.5rem}
+  .ref-item{font-size:12px;color:#555;line-height:1.6}
+
+  /* FOOTER */
+  footer{background:#0a0a0a;color:#444;padding:2rem;text-align:center;font-size:12px;letter-spacing:.05em}
+
+  /* PROGRESS BAR */
+  .progress-bar{position:fixed;top:0;left:0;height:2px;background:#111;z-index:200;transition:width .1s}
+
+  /* BACK TO TOP */
+  .btt{position:fixed;bottom:2rem;right:2rem;width:42px;height:42px;background:#111;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transform:translateY(10px);transition:all .3s;z-index:50;border:none;color:#fff;font-size:16px}
+  .btt.show{opacity:1;transform:translateY(0)}
+  .btt:hover{background:#333}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="pb"></div>
+
+<nav id="navbar">
+  <div class="nav-logo">Deep Learning Blog</div>
+  <div class="nav-links">
+    <a href="#what">What is CNN</a>
+    <a href="#architectures">Architectures</a>
+    <a href="#compare">Compare</a>
+    <a href="#applications">Applications</a>
+  </div>
+  <a href="#summary" class="nav-pill">Summary</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg">
+    <div class="hero-grid"></div>
+    <div class="hero-blob"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Deep Learning Blog Series · Core Architectures
+    </div>
+    <h1>Evolution of<br><span>CNNs</span></h1>
+    <p class="hero-sub">From LeNet to ResNet — a complete beginner's guide to how Convolutional Neural Networks changed the world of computer vision.</p>
+    <div class="hero-cta">
+      <a href="#what" class="btn-primary">Start Reading</a>
+      <a href="#compare" class="btn-secondary">Jump to Comparison</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    <div class="scroll-txt">Scroll</div>
+  </div>
+</div>
+
+<!-- WHAT IS CNN -->
+<section id="what">
+  <div class="reveal">
+    <div class="section-label">Section 01</div>
+    <h2 class="section-title">What is a CNN?</h2>
+    <p class="section-desc">A CNN is a deep learning model designed to process structured grid data like images — preserving 2D structure rather than flattening it into a list of numbers.</p>
+  </div>
+  <div class="cnn-intro reveal">
+    <div class="cnn-text">
+      <h3>Built for Images</h3>
+      <p>Unlike regular neural networks, CNNs preserve spatial relationships. A cat's eye stays in the upper half of the image — and a CNN knows that matters.</p>
+      <p>Each layer learns increasingly abstract features: early layers detect edges and textures, while deeper layers recognise shapes, faces, and objects.</p>
+      <p>The result is a network that "sees" — the foundation of modern computer vision.</p>
+    </div>
+    <div class="layers-viz">
+      <div class="layer-row">
+        <div class="layer-icon">C</div>
+        <div class="layer-info">
+          <div class="layer-name">Convolutional Layer</div>
+          <div class="layer-desc">Scans image with a small filter to detect features</div>
+        </div>
+        <div class="layer-analogy">Magnifying glass sliding over image</div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-icon">P</div>
+        <div class="layer-info">
+          <div class="layer-name">Pooling Layer</div>
+          <div class="layer-desc">Shrinks feature maps to reduce computation</div>
+        </div>
+        <div class="layer-analogy">Zooming out for the bigger picture</div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-icon">F</div>
+        <div class="layer-info">
+          <div class="layer-name">Fully Connected Layer</div>
+          <div class="layer-desc">Makes the final prediction</div>
+        </div>
+        <div class="layer-analogy">Judge giving a final verdict</div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-icon">R</div>
+        <div class="layer-info">
+          <div class="layer-name">ReLU Activation</div>
+          <div class="layer-desc">Introduces non-linearity to enable deep learning</div>
+        </div>
+        <div class="layer-analogy">Neuron firing when signal is strong enough</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE DIAGRAM -->
+  <div class="interactive-diagram-container reveal" style="margin-top: 4rem; padding: 2rem; background: #fafafa; border-radius: 16px; border: 1px solid #eaeaea;">
+    <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 1.5rem; text-align: center;">Interactive CNN Visualizer</h3>
+    
+    <div class="diagram-tabs" style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem;">
+      <button class="diag-tab active" onclick="switchTab('conv-tab')" style="padding: 8px 16px; border-radius: 20px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; font-size: 13px; font-weight: 500;">How Convolution Works</button>
+      <button class="diag-tab" onclick="switchTab('pool-tab')" style="padding: 8px 16px; border-radius: 20px; border: 1px solid #ddd; background: #fff; color: #111; cursor: pointer; font-size: 13px; font-weight: 500;">How Pooling Works</button>
+      <button class="diag-tab" onclick="switchTab('arch-tab')" style="padding: 8px 16px; border-radius: 20px; border: 1px solid #ddd; background: #fff; color: #111; cursor: pointer; font-size: 13px; font-weight: 500;">Architecture Differences</button>
+      <button class="diag-tab" onclick="switchTab('full-arch-tab')" style="padding: 8px 16px; border-radius: 20px; border: 1px solid #ddd; background: #fff; color: #111; cursor: pointer; font-size: 13px; font-weight: 500;">Full CNN Pipeline</button>
+    </div>
+
+    <!-- Convolution Tab -->
+    <div id="conv-tab" class="diag-content" style="display: block;">
+      <p style="text-align: center; margin-bottom: 1rem; color: #555; font-size: 14px;">Watch how a 3x3 filter processes the input. Click "Play" to auto-run, or click numbers in the input grid to change them.</p>
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <button onclick="playConv()" id="playConvBtn" style="background:#111; color:#fff; border:none; padding:8px 24px; border-radius:20px; cursor:pointer; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Play Convolution
+        </button>
+      </div>
+
+      <div style="display: flex; justify-content: center; align-items: flex-start; gap: 3rem; flex-wrap: wrap;">
+        
+        <div style="text-align: center;">
+          <h4 style="font-size: 12px; color: #888; margin-bottom: 1rem; text-transform: uppercase;">Input Image (5x5)</h4>
+          <div id="conv-input" style="display: grid; grid-template-columns: repeat(5, 40px); gap: 2px; position: relative; margin-bottom: 1rem;">
+            <div id="filter-box" style="position: absolute; width: 124px; height: 124px; border: 3px solid #f50057; border-radius: 4px; top: 0; left: 0; pointer-events: none; transition: all 0.3s ease; background: rgba(245, 0, 87, 0.1); z-index: 10;"></div>
+            <!-- Grid generated by JS -->
+          </div>
+          <div style="font-size:11px; color:#999;">Filter matrix (3x3):<br>All ones (1) for simplicity</div>
+        </div>
+        
+        <div style="font-size: 24px; color: #ccc; margin-top: 4rem;">➔</div>
+        
+        <div style="text-align: center;">
+          <h4 style="font-size: 12px; color: #888; margin-bottom: 1rem; text-transform: uppercase;">Feature Map (3x3)</h4>
+          <div id="conv-output" style="display: grid; grid-template-columns: repeat(3, 40px); gap: 2px; margin-bottom: 1rem;">
+            <!-- Grid generated by JS -->
+          </div>
+          <div id="conv-math" style="font-family:monospace; font-size:12px; color:#555; background:#eee; padding:10px; border-radius:8px; width:200px; text-align:left; min-height:80px; display:flex; align-items:center; justify-content:center;">
+             Hover over the grid to see the math...
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Pooling Tab -->
+    <div id="pool-tab" class="diag-content" style="display: none;">
+      <p style="text-align: center; margin-bottom: 1rem; color: #555; font-size: 14px;">Toggle between <strong>Max Pooling</strong> and <strong>Average Pooling</strong> to see how the result changes in real-time.</p>
+      
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <select id="poolSelector" onchange="updatePooling()" style="padding:8px 16px; border-radius:8px; border:1px solid #111; font-size:14px; font-weight:600; cursor:pointer; background:#fff; outline:none;">
+          <option value="max">Max Pooling (Take strict max)</option>
+          <option value="avg">Average Pooling (Take average)</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: center; align-items: center; gap: 3rem; flex-wrap: wrap;">
+        
+        <div style="text-align: center;">
+          <h4 style="font-size: 12px; color: #888; margin-bottom: 1rem; text-transform: uppercase;">Feature Map (4x4)</h4>
+          <div id="pool-input" style="display: grid; grid-template-columns: repeat(4, 50px); gap: 2px; position: relative;">
+            <!-- Generates colors based on JS -->
+          </div>
+        </div>
+
+        <div style="font-size: 24px; color: #ccc;">➔</div>
+
+        <div style="text-align: center;">
+          <h4 style="font-size: 12px; color: #888; margin-bottom: 1rem; text-transform: uppercase;">Pooled Map (2x2)</h4>
+          <div id="pool-output" style="display: grid; grid-template-columns: repeat(2, 50px); gap: 2px;">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Architecture Tab -->
+    <div id="arch-tab" class="diag-content" style="display: none;">
+      <p style="text-align: center; margin-bottom: 2rem; color: #555; font-size: 14px;">Click the button below to send data through the network. Notice how the ResNet skip connection bypasses layers preventing vanishing gradients.</p>
+      
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <button onclick="animateNetwork()" style="background:#111; color:#fff; border:none; padding:8px 24px; border-radius:20px; cursor:pointer; font-size:13px; font-weight:600;">Test The Networks</button>
+      </div>
+
+      <div style="display: flex; gap: 4rem; justify-content: center; flex-wrap: wrap; position: relative;">
+        <!-- Linear -->
+        <div style="text-align: center; min-width: 200px; position: relative;">
+          <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 1rem;">Plain Network</h4>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative;" id="plain-path">
+            <div class="data-dot" id="dot1" style="position: absolute; width:12px; height:12px; background:#f50057; border-radius:50%; top:0; left:50%; transform:translateX(-50%); opacity:0; z-index:20;"></div>
+            
+            <div style="padding: 10px 20px; background: #e0e0e0; border-radius: 6px; font-size: 12px; width:160px;">Input (x)</div>
+            <div style="height: 20px; width: 2px; background: #ccc;"></div>
+            <div style="padding: 10px 20px; background: #bbdefb; border-radius: 6px; font-size: 12px; border: 1px solid #1976d2; width:160px; transition:transform 0.1s;" class="layer-block">Conv Layer</div>
+            <div style="height: 20px; width: 2px; background: #ccc;"></div>
+            <div style="padding: 10px 20px; background: #ffe0b2; border-radius: 6px; font-size: 12px; border: 1px solid #f57c00; width:160px; transition:transform 0.1s;" class="layer-block">ReLU</div>
+            <div style="height: 20px; width: 2px; background: #ccc;"></div>
+            <div style="padding: 10px 20px; background: #bbdefb; border-radius: 6px; font-size: 12px; border: 1px solid #1976d2; width:160px; transition:transform 0.1s;" class="layer-block">Conv Layer</div>
+            <div style="height: 20px; width: 2px; background: #ccc;"></div>
+            <div style="padding: 10px 20px; background: #c8e6c9; border-radius: 6px; font-size: 12px; border: 1px solid #388e3c; font-weight: bold; width:160px;" id="plain-out">Output: F(x)</div>
+          </div>
+        </div>
+
+        <!-- ResNet -->
+        <div style="text-align: center; min-width: 200px;">
+          <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 1rem;">Residual Network</h4>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative;" id="res-path">
+            <div class="data-dot" id="dot2" style="position: absolute; width:12px; height:12px; background:#4caf50; border-radius:50%; top:0; left:50%; transform:translateX(-50%); opacity:0; z-index:20;"></div>
+            <div class="data-dot" id="dot3" style="position: absolute; width:12px; height:12px; background:#2196f3; border-radius:50%; top:45px; left:200px; opacity:0; z-index:20;"></div>
+
+            <div style="padding: 10px 20px; background: #e0e0e0; border-radius: 6px; font-size: 12px; width:160px;">Input (x)</div>
+            
+            <div style="height: 20px; width: 2px; background: #ccc;"></div>
+            <div style="padding: 10px 20px; background: #bbdefb; border-radius: 6px; font-size: 12px; border: 1px solid #1976d2; width:160px; transition:transform 0.1s;" class="layer-block">Conv Layer</div>
+            <div style="height: 20px; width: 2px; background: #ccc;"></div>
+            <div style="padding: 10px 20px; background: #ffe0b2; border-radius: 6px; font-size: 12px; border: 1px solid #f57c00; width:160px; transition:transform 0.1s;" class="layer-block">ReLU</div>
+            <div style="height: 20px; width: 2px; background: #ccc;"></div>
+            <div style="padding: 10px 20px; background: #bbdefb; border-radius: 6px; font-size: 12px; border: 1px solid #1976d2; width:160px; transition:transform 0.1s;" class="layer-block">Conv Layer</div>
+            <div style="height: 20px; width: 2px; background: #ccc;"></div>
+
+            <!-- Skip Connection Line -->
+            <svg style="position: absolute; left: 140px; top: 15px; width: 80px; height: 180px; z-index: 1;">
+              <path id="skipPath" d="M 0 0 C 80 0 80 180 0 180" fill="transparent" stroke="#111" stroke-width="2" stroke-dasharray="4,4" />
+              <polygon points="0,180 8,175 8,185" fill="#111" />
+            </svg>
+
+            <div style="padding: 10px 20px; background: #e0e0e0; border-radius: 50%; font-size: 16px; font-weight: bold; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; z-index:2; transition:transform 0.1s;" class="layer-block">+</div>
+            <div style="height: 20px; width: 2px; background: #ccc;"></div>
+            <div style="padding: 10px 20px; background: #c8e6c9; border-radius: 6px; font-size: 12px; border: 1px solid #388e3c; font-weight: bold; width:160px;" id="res-out">Output: F(x) + x</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full CNN Pipeline Tab -->
+    <div id="full-arch-tab" class="diag-content" style="display: none;">
+      <p style="text-align: center; margin-bottom: 2rem; color: #555; font-size: 14px;">A complete end-to-end Convolutional Neural Network. Hover over each stage to understand its specific role in transforming an image into a classified output.</p>
+      
+      <div style="display: flex; justify-content: center; align-items: center; flex-wrap: nowrap; gap: 1rem; max-width: 100%; overflow-x: auto; padding: 2rem 1rem;">
+        
+        <!-- Input -->
+        <div class="pipeline-step" style="text-align: center; position: relative; cursor: help;" onmouseenter="showTooltip(this, 'Raw pixel data (e.g., 28x28x3 for RGB). The network sees this as a grid of numbers.')" onmouseleave="hideTooltip(this)">
+          <div style="font-size: 32px; background: #fff; border: 2px dashed #999; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin: 0 auto 10px;">🚗</div>
+          <div style="font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase;">Input Image</div>
+        </div>
+
+        <div style="color: #999;">➔</div>
+
+        <!-- Conv Layer 1 -->
+        <div class="pipeline-step" style="text-align: center; position: relative; cursor: help;" onmouseenter="showTooltip(this, 'Filters slide over the image to extract low-level features like edges and curves.')" onmouseleave="hideTooltip(this)">
+          <div style="position: relative; width: 60px; height: 60px; margin: 0 auto 10px;">
+            <div style="position: absolute; top:4px; left:4px; width: 44px; height: 44px; background: rgba(33, 150, 243, 0.4); border: 2px solid #2196f3; border-radius: 4px;"></div>
+            <div style="position: absolute; top:8px; left:8px; width: 44px; height: 44px; background: rgba(33, 150, 243, 0.6); border: 2px solid #2196f3; border-radius: 4px;"></div>
+            <div style="position: absolute; top:12px; left:12px; width: 44px; height: 44px; background: rgba(33, 150, 243, 0.9); border: 2px solid #1976d2; border-radius: 4px;"></div>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase;">Conv1 + ReLU</div>
+        </div>
+
+        <div style="color: #999;">➔</div>
+
+        <!-- Pool Layer 1 -->
+        <div class="pipeline-step" style="text-align: center; position: relative; cursor: help;" onmouseenter="showTooltip(this, 'Downsamples the feature maps, reducing spatial dimensions but keeping the most important information.')" onmouseleave="hideTooltip(this)">
+          <div style="position: relative; width: 60px; height: 60px; margin: 0 auto 10px;">
+            <div style="position: absolute; top:4px; left:4px; width: 32px; height: 32px; background: rgba(76, 175, 80, 0.4); border: 2px solid #4caf50; border-radius: 4px;"></div>
+            <div style="position: absolute; top:10px; left:10px; width: 32px; height: 32px; background: rgba(76, 175, 80, 0.6); border: 2px solid #4caf50; border-radius: 4px;"></div>
+            <div style="position: absolute; top:16px; left:16px; width: 32px; height: 32px; background: rgba(76, 175, 80, 0.9); border: 2px solid #388e3c; border-radius: 4px;"></div>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase;">Max Pool 1</div>
+        </div>
+
+        <div style="color: #999;">➔</div>
+
+        <!-- Conv Layer 2 -->
+        <div class="pipeline-step" style="text-align: center; position: relative; cursor: help;" onmouseenter="showTooltip(this, 'Deeper filters combine low-level features to recognize complex shapes like wheels or windows.')" onmouseleave="hideTooltip(this)">
+          <div style="position: relative; width: 60px; height: 60px; margin: 0 auto 10px;">
+            <div style="position: absolute; top:4px; left:4px; width: 28px; height: 28px; background: rgba(156, 39, 176, 0.4); border: 2px solid #9c27b0; border-radius: 2px;"></div>
+            <div style="position: absolute; top:12px; left:12px; width: 28px; height: 28px; background: rgba(156, 39, 176, 0.6); border: 2px solid #9c27b0; border-radius: 2px;"></div>
+            <div style="position: absolute; top:20px; left:20px; width: 28px; height: 28px; background: rgba(156, 39, 176, 0.9); border: 2px solid #7b1fa2; border-radius: 2px;"></div>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase;">Conv2 + ReLU</div>
+        </div>
+
+        <div style="color: #999;">➔</div>
+
+        <!-- Flatten -->
+        <div class="pipeline-step" style="text-align: center; position: relative; cursor: help;" onmouseenter="showTooltip(this, 'Transforms the 3D output of the convolutional/pooling layers into a 1D flat array of numbers to feed into regular dense layers.')" onmouseleave="hideTooltip(this)">
+          <div style="display: flex; flex-direction: column; gap: 2px; width: 60px; height: 60px; align-items: center; justify-content: center; margin: 0 auto 10px;">
+            <div style="width: 8px; height: 8px; background: #666; border-radius: 50%;"></div>
+            <div style="width: 8px; height: 8px; background: #666; border-radius: 50%;"></div>
+            <div style="width: 8px; height: 8px; background: #666; border-radius: 50%;"></div>
+            <div style="width: 8px; height: 8px; background: #666; border-radius: 50%;"></div>
+            <div style="width: 8px; height: 8px; background: #666; border-radius: 50%;"></div>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase;">Flatten</div>
+        </div>
+
+        <div style="color: #999;">➔</div>
+
+        <!-- Fully Connected -->
+        <div class="pipeline-step" style="text-align: center; position: relative; cursor: help;" onmouseenter="showTooltip(this, 'Standard neural network layers that look at the flattened highly-abstract features and perform the final reasoning/classification.')" onmouseleave="hideTooltip(this)">
+          <div style="display: flex; gap: 10px; width: 60px; height: 60px; align-items: center; justify-content: center; margin: 0 auto 10px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="width: 8px; height: 8px; background: #f57c00; border-radius: 50%;"></div>
+              <div style="width: 8px; height: 8px; background: #f57c00; border-radius: 50%;"></div>
+              <div style="width: 8px; height: 8px; background: #f57c00; border-radius: 50%;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="width: 8px; height: 8px; background: #e65100; border-radius: 50%;"></div>
+              <div style="width: 8px; height: 8px; background: #e65100; border-radius: 50%;"></div>
+            </div>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase;">Dense Layers</div>
+        </div>
+
+        <div style="color: #999;">➔</div>
+
+        <!-- Softmax Output -->
+        <div class="pipeline-step" style="text-align: center; position: relative; cursor: help;" onmouseenter="showTooltip(this, 'Softmax activation turns raw scores into probabilities. The highest probability becomes the final prediction.')" onmouseleave="hideTooltip(this)">
+          <div style="background: #e8f5e9; border: 2px solid #4caf50; padding: 8px 12px; border-radius: 8px; margin: 0 auto 10px;">
+            <div style="font-size: 10px; font-weight: bold; color: #1b5e20;">Car: 85%</div>
+            <div style="font-size: 8px; color: #888;">Truck: 10%</div>
+            <div style="font-size: 8px; color: #888;">Bike: 5%</div>
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase;">Output</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Custom Tooltip CSS added dynamically -->
+  <style>
+    .tooltip-box {
+      position: absolute;
+      background: #111;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      width: 200px;
+      text-transform: none;
+      font-weight: 400;
+      line-height: 1.5;
+      text-align: left;
+      z-index: 100;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      opacity: 0;
+      transition: all 0.2s;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .tooltip-box::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #111 transparent transparent transparent;
+    }
+    .pipeline-step:hover .tooltip-box {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-5px);
+    }
+  </style>
+
+  <script>
+    function showTooltip(elem, text) {
+      if(!elem.querySelector('.tooltip-box')) {
+        let t = document.createElement('div');
+        t.className = 'tooltip-box';
+        t.innerText = text;
+        elem.appendChild(t);
+      }
+    }
+    function hideTooltip(elem) {
+      let t = elem.querySelector('.tooltip-box');
+      if(t) t.remove();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.diag-content').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.diag-tab').forEach(el => {
+        el.style.background = '#fff';
+        el.style.color = '#111';
+        el.style.borderColor = '#ddd';
+      });
+      document.getElementById(tabId).style.display = 'block';
+      let activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+      activeBtn.style.background = '#111';
+      activeBtn.style.color = '#fff';
+      activeBtn.style.borderColor = '#111';
+    }
+
+    /* === 1. CONVOLUTION INTERACTIVE === */
+    const inputGrid = document.getElementById('conv-input');
+    const outputGrid = document.getElementById('conv-output');
+    const filterBox = document.getElementById('filter-box');
+    const convMath = document.getElementById('conv-math');
+    
+    let cellVals = [];
+    let isPlaying = false;
+    let playInterval;
+
+    function renderConvGrids() {
+      inputGrid.innerHTML = '<div id="filter-box" style="position: absolute; width: 124px; height: 124px; border: 3px solid #f50057; border-radius: 4px; top: 0; left: 0; pointer-events: none; transition: all 0.3s ease; background: rgba(245, 0, 87, 0.1); z-index: 10;"></div>';
+      outputGrid.innerHTML = '';
+      
+      for(let r=0; r<5; r++) {
+        for(let c=0; c<5; c++) {
+          let cell = document.createElement('div');
+          cell.style.width = '40px'; cell.style.height = '40px';
+          cell.style.background = '#fff'; cell.style.border = '1px solid #ddd';
+          cell.style.display = 'flex'; cell.style.alignItems = 'center'; cell.style.justifyContent = 'center';
+          cell.style.fontSize = '12px'; cell.style.color = '#777'; cell.style.cursor = 'pointer';
+          cell.innerText = cellVals[r][c];
+          cell.title = "Click to change value";
+          
+          cell.onclick = () => {
+            cellVals[r][c] = (cellVals[r][c] + 1) % 10;
+            renderConvGrids();
+          };
+
+          cell.onmouseenter = () => updateConvHover(r, c);
+          inputGrid.appendChild(cell);
+        }
+      }
+      
+      for(let r=0; r<3; r++) {
+        for(let c=0; c<3; c++) {
+          let cell = document.createElement('div');
+          cell.style.width = '40px'; cell.style.height = '40px';
+          cell.style.background = '#fff'; cell.style.border = '1px solid #ddd';
+          cell.style.display = 'flex'; cell.style.alignItems = 'center'; cell.style.justifyContent = 'center';
+          cell.style.fontSize = '14px'; cell.style.fontWeight = 'bold'; cell.style.color = '#333';
+          cell.style.transition = 'all 0.2s ease';
+          
+          let sum = 0;
+          for(let i=0; i<3; i++) {
+            for(let j=0; j<3; j++) {
+               sum += cellVals[r+i][c+j];
+            }
+          }
+          cell.innerText = sum;
+          outputGrid.appendChild(cell);
+        }
+      }
+    }
+
+    function updateConvHover(r, c) {
+      let filterStartRow = Math.min(Math.max(r - 1, 0), 2);
+      let filterStartCol = Math.min(Math.max(c - 1, 0), 2);
+      
+      let box = document.getElementById('filter-box');
+      if(box) {
+        box.style.top = (filterStartRow * 42) + 'px';
+        box.style.left = (filterStartCol * 42) + 'px';
+      }
+      
+      Array.from(outputGrid.children).forEach(child => {
+        child.style.background = '#fff';
+        child.style.transform = 'scale(1)';
+        child.style.border = '1px solid #ddd';
+      });
+      
+      let outIndex = (filterStartRow * 3) + filterStartCol;
+      let outCell = outputGrid.children[outIndex];
+      if(outCell) {
+        outCell.style.background = '#f50057';
+        outCell.style.color = '#fff';
+        outCell.style.transform = 'scale(1.1)';
+        outCell.style.border = '1px solid #f50057';
+      }
+
+      // Update Math
+      let mathStr = `Top-Left corner: Input[${filterStartRow}][${filterStartCol}]<br><br> Sum of elements: <br>`;
+      let vals = [];
+      for(let i=0; i<3; i++){
+        for(let j=0; j<3; j++){
+          vals.push(cellVals[filterStartRow+i][filterStartCol+j]);
+        }
+      }
+      mathStr += vals.join(' + ') + " = <strong>" + outCell.innerText + "</strong>";
+      convMath.innerHTML = mathStr;
+    }
+
+    function playConv() {
+      let btn = document.getElementById('playConvBtn');
+      if(isPlaying) {
+        clearInterval(playInterval);
+        isPlaying = false;
+        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Play Convolution`;
+        return;
+      }
+      isPlaying = true;
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Stop`;
+      
+      let r = 1, c = 1;
+      updateConvHover(r, c);
+      playInterval = setInterval(() => {
+        c++;
+        if(c > 3) { c = 1; r++; }
+        if(r > 3) { r = 1; c = 1; }
+        updateConvHover(r, c);
+      }, 800);
+    }
+
+    // Init Conv
+    for(let r=0; r<5; r++) {
+      let rowVals = [];
+      for(let c=0; c<5; c++) { rowVals.push(Math.floor(Math.random() * 10)); }
+      cellVals.push(rowVals);
+    }
+    renderConvGrids();
+
+
+    /* === 2. POOLING INTERACTIVE === */
+    const poolData = [
+      [12,20, 30,0], [8,12, 2,0],
+      [34,70, 37,4], [112,100, 25,12]
+    ];
+    const poolStyles = [
+      ['#ffebee','#d32f2f', '#ffcdd2','#b71c1c'], // red
+      ['#e8f5e9','#388e3c', '#c8e6c9','#1b5e20'], // green
+      ['#e3f2fd','#1976d2', '#bbdefb','#0d47a1'], // blue
+      ['#fff3e0','#f57c00', '#ffe0b2','#e65100']  // orange
+    ];
+    const poolIn = document.getElementById('pool-input');
+    const poolOut = document.getElementById('pool-output');
+    
+    function updatePooling() {
+      let type = document.getElementById('poolSelector').value;
+      poolIn.innerHTML = '';
+      poolOut.innerHTML = '';
+
+      let blockIndex = 0;
+      for(let blockR=0; blockR<2; blockR++){
+        for(let blockC=0; blockC<2; blockC++){
+          let blockVals = [];
+          for(let i=0; i<2; i++){
+            for(let j=0; j<2; j++){
+              blockVals.push(poolData[blockR*2 + i][blockC*2 + j]);
+            }
+          }
+          
+          // Draw Input Blocks
+          let styleSet = poolStyles[blockIndex];
+          for(let i=0; i<2; i++){
+            for(let j=0; j<2; j++){
+              let val = poolData[blockR*2 + i][blockC*2 + j];
+              let d = document.createElement('div');
+              d.style = `width:50px; height:50px; background:${styleSet[0]}; border-radius:4px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:${styleSet[1]}; grid-row:${blockR*2+i+1}; grid-column:${blockC*2+j+1}; transition:all 0.3s;`;
+              
+              if(type === 'max' && val === Math.max(...blockVals)) {
+                d.style.border = `2px solid ${styleSet[1]}`;
+                d.style.transform = 'scale(1.05)';
+                d.style.zIndex = '5';
+              }
+              
+              d.innerText = val;
+              poolIn.appendChild(d);
+            }
+          }
+
+          // Output calculation
+          let resultVal = 0;
+          if(type === 'max') {
+            resultVal = Math.max(...blockVals);
+          } else {
+            let avg = blockVals.reduce((a,b)=>a+b, 0) / 4;
+            resultVal = Math.round(avg * 10) / 10;
+          }
+
+          let outD = document.createElement('div');
+          outD.style = `width:50px; height:50px; background:${styleSet[2]}; border-radius:4px; border:2px solid ${styleSet[1]}; display:flex; align-items:center; justify-content:center; font-weight:bold; color:${styleSet[3]}; transition:all 0.3s;`;
+          outD.innerText = resultVal;
+          poolOut.appendChild(outD);
+
+          blockIndex++;
+        }
+      }
+    }
+    updatePooling(); // Run once
+
+
+    /* === 3. ARCHITECTURE ANIMATION === */
+    function animateNetwork() {
+      let d1 = document.getElementById('dot1');
+      let d2 = document.getElementById('dot2');
+      let d3 = document.getElementById('dot3');
+      
+      [d1, d2, d3].forEach(d => {
+        d.style.transition = 'none';
+        d.style.opacity = '1';
+        d.style.top = '0px';
+      });
+      d3.style.left = '40px'; 
+      d3.style.top = '0px';
+      
+      // Force reflow
+      void d1.offsetWidth; 
+
+      // Set transitions
+      d1.style.transition = 'top 2s linear';
+      d2.style.transition = 'top 2s linear';
+      
+      // Animate plain network & Resnet main path
+      d1.style.top = '220px';
+      d2.style.top = '220px';
+
+      // Animate Skip connection on an arc
+      let startTime = performance.now();
+      function animateArc(t) {
+        let elapsed = t - startTime;
+        let progress = Math.min(elapsed / 2000, 1);
+        
+        // Arc parametric equation (approx)
+        let bezierY = progress * 180; 
+        let bezierX = Math.sin(progress * Math.PI) * 70 + 40; 
+        
+        d3.style.left = (140 + bezierX) + 'px';
+        d3.style.top = (15 + bezierY) + 'px';
+
+        if(progress < 1) requestAnimationFrame(animateArc);
+      }
+      requestAnimationFrame(animateArc);
+
+      // Bounce effects when passing through layers
+      let blocks = document.querySelectorAll('.layer-block');
+      blocks.forEach((b, i) => {
+        setTimeout(() => {
+          b.style.transform = 'scale(1.1)';
+          setTimeout(() => b.style.transform = 'scale(1)', 150);
+        }, 300 + (i % 3) * 650);
+      });
+
+      setTimeout(() => {
+        [d1, d2, d3].forEach(d => d.style.opacity = '0');
+        document.getElementById('plain-out').style.background = '#a5d6a7';
+        document.getElementById('res-out').style.background = '#81c784';
+        setTimeout(() => {
+          document.getElementById('plain-out').style.background = '#c8e6c9';
+          document.getElementById('res-out').style.background = '#c8e6c9';
+        }, 500);
+      }, 2000);
+    }
+  </script>
+</section>
+<!-- TIMELINE -->
+<div class="timeline-section" id="timeline">
+  <div class="timeline-inner">
+    <div class="reveal">
+      <div class="section-label">Section 02</div>
+      <h2 class="section-title" style="color:#111">Evolution Timeline</h2>
+      <p class="section-desc">Each architecture solved a problem the previous one couldn't. A story of incremental genius from 1998 to 2015.</p>
+    </div>
+    <div class="timeline reveal">
+      <div class="timeline-item">
+        <div class="timeline-node"></div>
+        <div class="timeline-year">1998</div>
+        <div class="timeline-model">LeNet-5</div>
+        <div class="timeline-tag">Pioneer</div>
+        <div class="timeline-blurb">First practical CNN for handwritten digit recognition</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-node"></div>
+        <div class="timeline-year">2012</div>
+        <div class="timeline-model">AlexNet</div>
+        <div class="timeline-tag">Revolution</div>
+        <div class="timeline-blurb">Launched the deep learning era with GPU training</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-node"></div>
+        <div class="timeline-year">2014</div>
+        <div class="timeline-model">VGGNet</div>
+        <div class="timeline-tag">Depth</div>
+        <div class="timeline-blurb">Proved deep + simple 3×3 filters works brilliantly</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-node"></div>
+        <div class="timeline-year">2014</div>
+        <div class="timeline-model">GoogLeNet</div>
+        <div class="timeline-tag">Efficiency</div>
+        <div class="timeline-blurb">27× fewer params than AlexNet with better accuracy</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-node"></div>
+        <div class="timeline-year">2015</div>
+        <div class="timeline-model">ResNet</div>
+        <div class="timeline-tag">Champion</div>
+        <div class="timeline-blurb">Skip connections — finally beat human-level accuracy</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ARCHITECTURES -->
+<section id="architectures">
+  <div class="reveal">
+    <div class="section-label">Section 03</div>
+    <h2 class="section-title">The Architectures</h2>
+    <p class="section-desc">Five models. Five breakthroughs. Each one asking — what did the last one get wrong?</p>
+  </div>
+  <div class="arch-grid">
+    <div class="arch-card reveal">
+      <div class="arch-year">1998</div>
+      <div class="arch-name">LeNet-5</div>
+      <div class="arch-desc">Created by Yann LeCun at Bell Labs to read ZIP codes on postal mail. The first practical CNN — revolutionary for its time.</div>
+      <div class="arch-stat">
+        <span class="stat-chip">7 layers</span>
+        <span class="stat-chip">60K params</span>
+        <span class="stat-chip">~99% on MNIST</span>
+      </div>
+      <div class="arch-innov">
+        <div class="innov-label">Key Innovations</div>
+        <div class="innov-list">
+          <div class="innov-item">Sigmoid & Tanh activations</div>
+          <div class="innov-item">Average pooling</div>
+          <div class="innov-item">Trained on MNIST (60K images)</div>
+        </div>
+      </div>
+    </div>
+    <div class="arch-card reveal">
+      <div class="arch-year">2012</div>
+      <div class="arch-name">AlexNet</div>
+      <div class="arch-desc">Won ImageNet 2012 with a 15.3% error rate vs runner-up's 26.2%. The moment deep learning became undeniable.</div>
+      <div class="arch-stat">
+        <span class="stat-chip">8 layers</span>
+        <span class="stat-chip">60M params</span>
+        <span class="stat-chip">15.3% error</span>
+      </div>
+      <div class="arch-innov">
+        <div class="innov-label">Key Innovations</div>
+        <div class="innov-list">
+          <div class="innov-item">ReLU — 6× faster than Sigmoid</div>
+          <div class="innov-item">Dropout (50%) prevents overfitting</div>
+          <div class="innov-item">Dual-GPU training</div>
+        </div>
+      </div>
+    </div>
+    <div class="arch-card reveal">
+      <div class="arch-year">2014</div>
+      <div class="arch-name">VGGNet</div>
+      <div class="arch-desc">Oxford's simple answer: stack many small 3×3 filters instead of fewer large ones. Three 3×3 filters = same field as one 7×7, but with fewer params and more non-linearity.</div>
+      <div class="arch-stat">
+        <span class="stat-chip">16 layers</span>
+        <span class="stat-chip">138M params</span>
+        <span class="stat-chip">7.3% error</span>
+      </div>
+      <div class="arch-innov">
+        <div class="innov-label">Key Innovations</div>
+        <div class="innov-list">
+          <div class="innov-item">Uniform 3×3 filter design</div>
+          <div class="innov-item">Extreme depth (up to 19 layers)</div>
+          <div class="innov-item">Gold standard for transfer learning</div>
+        </div>
+      </div>
+    </div>
+    <div class="arch-card reveal">
+      <div class="arch-year">2014</div>
+      <div class="arch-name">GoogLeNet</div>
+      <div class="arch-desc">Google's Inception module runs 1×1, 3×3, and 5×5 filters in parallel — letting the network decide which size works best at each point.</div>
+      <div class="arch-stat">
+        <span class="stat-chip">22 layers</span>
+        <span class="stat-chip">5M params</span>
+        <span class="stat-chip">6.67% error</span>
+      </div>
+      <div class="arch-innov">
+        <div class="innov-label">Key Innovations</div>
+        <div class="innov-list">
+          <div class="innov-item">Inception modules (parallel convs)</div>
+          <div class="innov-item">27× fewer params than AlexNet</div>
+          <div class="innov-item">Global average pooling</div>
+        </div>
+      </div>
+    </div>
+    <div class="arch-card reveal">
+      <div class="arch-year">2015</div>
+      <div class="arch-name">ResNet</div>
+      <div class="arch-desc">Microsoft Research's brilliant insight: instead of learning H(x), learn just the residual F(x) = H(x) − x. Skip connections let gradients flow freely — enabling networks of 150+ layers.</div>
+      <div class="arch-stat">
+        <span class="stat-chip">152 layers</span>
+        <span class="stat-chip">60M params</span>
+        <span class="stat-chip">5.71% error</span>
+      </div>
+      <div class="arch-innov">
+        <div class="innov-label">Key Innovations</div>
+        <div class="innov-list">
+          <div class="innov-item">Skip / residual connections</div>
+          <div class="innov-item">Solved vanishing gradient completely</div>
+          <div class="innov-item">Beat human-level accuracy (5.1%)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+    
+        <!-- ARCHITECTURE PLAYGROUND -->
+    <div class="arch-playground reveal" style="margin-top:4rem; margin-bottom:2rem; padding:2rem; background:#fff; border:1px solid #e8e8e8; border-radius:16px;">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 0.5rem;">Interactive Node-Level CNN Visualizer</h3>
+        <p style="font-size: 14px; color: #666; max-width: 700px; margin: 0 auto;">Watch the data flow through individual artificial neurons. Select an architecture and hit "Run Pass" to see local receptive fields (Conv) and dense connections (FC) in action.</p>
+      </div>
+
+      <!-- Toolbar -->
+      <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+        <button onclick="nnLoadModel('lenet')" id="nn-lenet" class="nn-tab-btn active" style="padding: 8px 16px; border:none; background:none; cursor:pointer; font-weight:600; color:#111; border-bottom:2px solid #111;">LeNet-5</button>
+        <button onclick="nnLoadModel('alexnet')" id="nn-alexnet" class="nn-tab-btn" style="padding: 8px 16px; border:none; background:none; cursor:pointer; font-weight:600; color:#888;">AlexNet</button>
+        <button onclick="nnLoadModel('vgg')" id="nn-vgg" class="nn-tab-btn" style="padding: 8px 16px; border:none; background:none; cursor:pointer; font-weight:600; color:#888;">VGG-Style</button>
+      </div>
+
+      <div style="display: flex; gap: 2rem; align-items: flex-start;">
+        <!-- Controls -->
+        <div style="width: 250px; background: #fafafa; padding: 1.5rem; border-radius: 12px; border: 1px solid #eee; flex-shrink: 0;">
+          <h4 style="font-size: 11px; text-transform: uppercase; color: #888; margin-bottom: 1rem;">Model Controls</h4>
+          
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-size: 12px; margin-bottom: 0.5rem; color: #444; font-weight: 600;">Input Dataset</label>
+            <select id="nn-dataset" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; outline: none;">
+              <option value="mnist">MNIST (Digits)</option>
+              <option value="cifar">CIFAR-10 (Images)</option>
+              <option value="imagenet">ImageNet (Hi-Res)</option>
+            </select>
+          </div>
+
+          <button onclick="nnAddLayer('conv')" style="width:100%; padding:8px; margin-bottom:8px; background:#fff; border:1px solid #ccc; border-radius:6px; cursor:pointer; font-size:12px;">+ Add Conv Layer</button>
+          <button onclick="nnAddLayer('pool')" style="width:100%; padding:8px; margin-bottom:8px; background:#fff; border:1px solid #ccc; border-radius:6px; cursor:pointer; font-size:12px;">+ Add Pool Layer</button>
+          <button onclick="nnAddLayer('fc')" style="width:100%; padding:8px; margin-bottom:16px; background:#fff; border:1px solid #ccc; border-radius:6px; cursor:pointer; font-size:12px;">+ Add FC Layer</button>
+          
+          <button onclick="nnRunTest()" id="nn-run-btn" style="width: 100%; padding: 12px; background: #f50057; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;">▶ Run Forward Pass</button>
+          <p id="nn-status" style="font-size:11px; text-align:center; margin-top:12px; color:#555; height:30px;">Ready.</p>
+        </div>
+
+        <!-- Canvas Area -->
+        <div style="flex:1; background: #0a0a0a; border-radius: 12px; overflow: hidden; position: relative;">
+          <canvas id="nn-canvas" width="800" height="400" style="display: block; width: 100%;"></canvas>
+          <!-- Tooltip overlay for layers -->
+          <div id="nn-layer-info" style="position:absolute; bottom:20px; left:20px; color:#fff; font-size:13px; font-weight:600; opacity:0; transition:0.3s; background:rgba(0,0,0,0.6); padding:4px 10px; border-radius:4px;">Layer Info</div>
+          <!-- Label outputs -->
+          <div id="nn-pred" style="position:absolute; right:20px; top:50%; transform:translateY(-50%); background:#fff; padding:12px 20px; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.5); display:none; flex-direction:column; gap:8px;">
+            <div style="font-size:10px; color:#888; text-transform:uppercase;">Prediction</div>
+            <div id="nn-pred-text" style="font-size:18px; font-weight:700; color:#111;">Dog</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Canvas rendering for the Neural Network diagram
+      const canvas = document.getElementById('nn-canvas');
+      const ctx = canvas.getContext('2d');
+      
+      let width = canvas.width;
+      let height = canvas.height;
+      
+      const architectures = {
+        'lenet': [
+          {type: 'input', nodes: 20, name: "Input Image 32x32"},
+          {type: 'conv', nodes: 15, name: "Conv 5x5"},
+          {type: 'pool', nodes: 10, name: "AvgPool 2x2"},
+          {type: 'conv', nodes: 12, name: "Conv 5x5"},
+          {type: 'pool', nodes: 8, name: "AvgPool 2x2"},
+          {type: 'fc', nodes: 14, name: "FC DENSE"},
+          {type: 'fc', nodes: 10, name: "FC DENSE"},
+          {type: 'fc', nodes: 4, name: "Softmax Output"}
+        ],
+        'alexnet': [
+          {type: 'input', nodes: 24, name: "Input Image 227x227"},
+          {type: 'conv', nodes: 18, name: "Conv 11x11"},
+          {type: 'pool', nodes: 12, name: "MaxPool 3x3"},
+          {type: 'conv', nodes: 16, name: "Conv 5x5"},
+          {type: 'pool', nodes: 10, name: "MaxPool 3x3"},
+          {type: 'conv', nodes: 14, name: "Conv 3x3 x3"},
+          {type: 'fc', nodes: 12, name: "FC 4096"},
+          {type: 'fc', nodes: 4, name: "Softmax Output"}
+        ],
+        'vgg': [
+          {type: 'input', nodes: 22, name: "Input Image 224x224"},
+          {type: 'conv', nodes: 20, name: "Conv 3x3 block"},
+          {type: 'pool', nodes: 16, name: "MaxPool 2x2"},
+          {type: 'conv', nodes: 14, name: "Conv 3x3 block"},
+          {type: 'pool', nodes: 10, name: "MaxPool 2x2"},
+          {type: 'conv', nodes: 12, name: "Conv 3x3 block"},
+          {type: 'fc', nodes: 8, name: "FC 4096"},
+          {type: 'fc', nodes: 4, name: "Softmax Output"}
+        ]
+      };
+
+      let currentArch = 'lenet';
+      let layers = [];
+      let isAnimating = false;
+      let activeLayerIndex = -1;
+      let animProgress = 0; // 0 to 1 between layers
+      let reqFrame;
+
+      function resizeCanvas() {
+        width = canvas.parentElement.clientWidth;
+        canvas.width = width;
+        drawNetwork();
+      }
+      window.addEventListener('resize', resizeCanvas);
+
+      function nnLoadModel(arch) {
+        if(isAnimating) return;
+        currentArch = arch;
+        layers = JSON.parse(JSON.stringify(architectures[arch]));
+        
+        // UI updates
+        document.querySelectorAll('.nn-tab-btn').forEach(btn => {
+          btn.style.color = '#888'; btn.style.borderBottom = '2px solid transparent';
+        });
+        const activeBtn = document.getElementById('nn-' + arch);
+        if(activeBtn) {
+          activeBtn.style.color = '#111';
+          activeBtn.style.borderBottom = '2px solid #111';
+        }
+        
+        document.getElementById('nn-pred').style.display = 'none';
+        
+        // initialize positions
+        computeNodePositions();
+        drawNetwork();
+      }
+
+      function nnAddLayer(type) {
+        if(isAnimating) return;
+        let count = type === 'fc' ? 10 : 12;
+        let name = type === 'conv' ? 'Custom Conv' : type === 'pool' ? 'Custom Pool' : 'Custom FC';
+        if(layers.length > 1 && layers[layers.length-1].type === 'fc') {
+          layers.splice(layers.length-1, 0, {type: type, nodes: count, name: name});
+        } else {
+          layers.push({type: type, nodes: count, name: name});
+        }
+        computeNodePositions();
+        drawNetwork();
+      }
+
+      function computeNodePositions() {
+        const paddingX = 40;
+        const startX = paddingX;
+        const endX = width - paddingX - 100; // room for label
+        const usableWidth = endX - startX;
+        
+        const gapX = layers.length > 1 ? usableWidth / (layers.length - 1) : 0;
+        
+        layers.forEach((layer, lIdx) => {
+          layer.x = startX + gapX * lIdx;
+          layer.nodeObjects = [];
+          
+          const gapY = Math.min((height - 40) / layer.nodes, 18);
+          const startY = height/2 - ((layer.nodes-1) * gapY) / 2;
+          
+          for(let i=0; i<layer.nodes; i++) {
+            layer.nodeObjects.push({
+              x: layer.x,
+              y: startY + i * gapY,
+              active: 0 // animation value 0 to 1
+            });
+          }
+        });
+      }
+
+      // We draw links based on layer type
+      function drawLink(x1, y1, x2, y2, opacity, glow=false) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        if(glow) {
+          ctx.strokeStyle = `rgba(245,0,87,${opacity})`;
+          ctx.lineWidth = 2;
+        } else {
+          ctx.strokeStyle = `rgba(255,255,255,${opacity})`;
+          ctx.lineWidth = 1;
+        }
+        ctx.stroke();
+      }
+
+      function drawNetwork() {
+        ctx.clearRect(0,0,width,height);
+        
+        // Draw Links
+        for(let l=0; l<layers.length-1; l++) {
+          const l1 = layers[l];
+          const l2 = layers[l+1];
+          const isFC = l2.type === 'fc';
+          const isConv = l2.type === 'conv' || l2.type === 'pool';
+          
+          const isCurrentActiveLink = (l === activeLayerIndex);
+          const drawProgress = isCurrentActiveLink ? animProgress : 1; 
+
+          for(let i=0; i<l1.nodes; i++) {
+            for(let j=0; j<l2.nodes; j++) {
+              // Conv layers: local connections. FC: all
+              let connected = false;
+              if(isFC) connected = true;
+              else if(isConv) {
+                // Connect if relative ratio is similar (+- some spread)
+                const ratio1 = i / Math.max(1, l1.nodes-1);
+                const ratio2 = j / Math.max(1, l2.nodes-1);
+                if(Math.abs(ratio1 - ratio2) < 0.25) connected = true;
+              }
+              
+              if(connected) {
+                let glow = false;
+                let opacity = 0.05;
+                if(isCurrentActiveLink) {
+                  // Active scanning
+                  glow = true;
+                  opacity = 0.4 * animProgress;
+                } else if(l < activeLayerIndex) {
+                  // past layers stay slightly lit
+                  glow = true;
+                  opacity = 0.15;
+                }
+                
+                // Draw partial line if animating
+                let ex = l1.nodeObjects[i].x + (l2.nodeObjects[j].x - l1.nodeObjects[i].x) * (isCurrentActiveLink ? drawProgress : 1);
+                let ey = l1.nodeObjects[i].y + (l2.nodeObjects[j].y - l1.nodeObjects[i].y) * (isCurrentActiveLink ? drawProgress : 1);
+                
+                if (l > activeLayerIndex && isAnimating) continue; // don't draw forward links
+                
+                drawLink(l1.nodeObjects[i].x, l1.nodeObjects[i].y, ex, ey, opacity, glow);
+                
+                // Draw spark
+                if(isCurrentActiveLink && animProgress > 0 && Math.random() < 0.05) {
+                   ctx.beginPath();
+                   ctx.arc(ex, ey, 2, 0, Math.PI*2);
+                   ctx.fillStyle = '#fff';
+                   ctx.fill();
+                }
+              }
+            }
+          }
+        }
+        
+        // Draw Nodes
+        layers.forEach((layer, lIdx) => {
+          if(lIdx > activeLayerIndex + 1 && isAnimating) return; // not reached yet
+          
+          let isActiveLayer = (lIdx === activeLayerIndex + 1 && animProgress > 0.8) || (lIdx === activeLayerIndex && animProgress < 0.5);
+          
+          layer.nodeObjects.forEach(node => {
+             ctx.beginPath();
+             ctx.arc(node.x, node.y, 3, 0, Math.PI*2);
+             
+             if(isActiveLayer) {
+               ctx.fillStyle = '#f50057';
+               ctx.shadowBlur = 10;
+               ctx.shadowColor = '#f50057';
+             } else if(lIdx <= activeLayerIndex || !isAnimating) {
+               ctx.fillStyle = '#42a5f5';
+               ctx.shadowBlur = 5;
+               ctx.shadowColor = '#42a5f5';
+             } else {
+               ctx.fillStyle = '#555';
+               ctx.shadowBlur = 0;
+             }
+             
+             ctx.fill();
+             ctx.shadowBlur = 0; // reset
+          });
+          
+          // Layer label below
+          if(lIdx <= activeLayerIndex + 1 || !isAnimating) {
+             ctx.fillStyle = "rgba(255,255,255,0.5)";
+             ctx.font = "10px sans-serif";
+             ctx.textAlign = "center";
+             ctx.fillText(layer.type.toUpperCase(), layer.x, height - 10);
+          }
+        });
+      }
+
+      function animate() {
+        if(!isAnimating) return;
+        
+        animProgress += 0.03; // speed
+        
+        if(animProgress >= 1) {
+          animProgress = 0;
+          activeLayerIndex++;
+          
+          // update UI text
+          if(activeLayerIndex < layers.length - 1) {
+            let nextTypeName = layers[activeLayerIndex+1].name;
+            let lbl = document.getElementById('nn-layer-info');
+            lbl.innerText = "Processing: " + nextTypeName;
+            lbl.style.opacity = 1;
+            
+            document.getElementById('nn-status').innerText = `Forward Pass: passing through ${nextTypeName}`;
+          }
+        }
+        
+        if(activeLayerIndex >= layers.length - 1) {
+          // Finished
+          isAnimating = false;
+          activeLayerIndex = -1;
+          animProgress = 0;
+          drawNetwork(); // final static draw
+          
+          document.getElementById('nn-run-btn').innerText = "▶ Run Forward Pass";
+          document.getElementById('nn-run-btn').style.background = "#f50057";
+          document.getElementById('nn-status').innerText = "Inference Complete.";
+          document.getElementById('nn-layer-info').style.opacity = 0;
+          
+          // Show prediction box
+          const ds = document.getElementById('nn-dataset').value;
+          let preds = [];
+          if(ds === 'mnist') preds = ['Digit 0', 'Digit 3', 'Digit 7', 'Digit 8'];
+          else if(ds === 'cifar') preds = ['Frog', 'Truck', 'Ship', 'Cat'];
+          else preds = ['Golden Retriever', 'Sports Car', 'Coffee Mug', 'Keyboard'];
+          
+          document.getElementById('nn-pred-text').innerText = preds[Math.floor(Math.random()*preds.length)];
+          document.getElementById('nn-pred').style.display = 'flex';
+          
+          return;
+        }
+        
+        drawNetwork();
+        reqFrame = requestAnimationFrame(animate);
+      }
+
+      function nnRunTest() {
+        if(isAnimating) return;
+        document.getElementById('nn-pred').style.display = 'none';
+        isAnimating = true;
+        activeLayerIndex = 0;
+        animProgress = 0;
+        
+        document.getElementById('nn-run-btn').innerText = "Running...";
+        document.getElementById('nn-run-btn').style.background = "#333";
+        document.getElementById('nn-status').innerText = "Data entering Input Layer...";
+        
+        cancelAnimationFrame(reqFrame);
+        animate();
+      }
+
+      window.addEventListener('DOMContentLoaded', () => { setTimeout(resizeCanvas, 100); nnLoadModel('lenet'); });
+    </script>
+
+
+<!-- COMPARISON TABLE -->
+<section id="compare" style="padding-top:0">
+  <div class="reveal">
+    <div class="section-label">Section 04</div>
+    <h2 class="section-title">Side-by-Side Comparison</h2>
+    <p class="section-desc">All five architectures on the same scale. The performance drop in error rate tells the whole story.</p>
+  </div>
+  <div class="table-wrap reveal">
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Year</th>
+          <th>Layers</th>
+          <th>Parameters</th>
+          <th>Top-5 Error</th>
+          <th>Key Innovation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>LeNet-5</td><td>1998</td><td>7</td><td>60K</td>
+          <td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:8%"></div></div><span>~1%</span></div></td>
+          <td>First practical CNN</td>
+        </tr>
+        <tr>
+          <td>AlexNet</td><td>2012</td><td>8</td><td>60M</td>
+          <td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:90%"></div></div><span>15.3%</span></div></td>
+          <td>ReLU, Dropout, GPU</td>
+        </tr>
+        <tr>
+          <td>VGGNet-16</td><td>2014</td><td>16</td><td>138M</td>
+          <td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:45%"></div></div><span>7.3%</span></div></td>
+          <td>Small 3×3 filters</td>
+        </tr>
+        <tr>
+          <td>GoogLeNet</td><td>2014</td><td>22</td><td>5M</td>
+          <td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:40%"></div></div><span>6.67%</span></div></td>
+          <td>Inception modules</td>
+        </tr>
+        <tr class="winner">
+          <td>ResNet-152</td><td>2015</td><td>152</td><td>60M</td>
+          <td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:33%"></div></div><span>5.71%</span></div></td>
+          <td>Skip connections</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<!-- APPLICATIONS -->
+<section id="applications">
+  <div class="reveal">
+    <div class="section-label">Section 05</div>
+    <h2 class="section-title">Real-World Applications</h2>
+    <p class="section-desc">CNNs aren't just research — they power the apps, devices, and systems we use every single day.</p>
+  </div>
+  <div class="apps-grid reveal">
+    <div class="app-card">
+      <div class="app-icon">👤</div>
+      <div class="app-name">Face Unlock</div>
+      <div class="app-model">Custom CNN</div>
+      <div class="app-desc">Detects and recognises your face in milliseconds on mobile devices</div>
+    </div>
+    <div class="app-card">
+      <div class="app-icon">📷</div>
+      <div class="app-name">Google Photos</div>
+      <div class="app-model">ResNet</div>
+      <div class="app-desc">Groups similar faces and identifies objects across millions of photos</div>
+    </div>
+    <div class="app-card">
+      <div class="app-icon">🩺</div>
+      <div class="app-name">Medical Diagnosis</div>
+      <div class="app-model">ResNet-50</div>
+      <div class="app-desc">Detects cancer tumours in X-rays and MRI scans with superhuman accuracy</div>
+    </div>
+    <div class="app-card">
+      <div class="app-icon">🚗</div>
+      <div class="app-name">Self-Driving Cars</div>
+      <div class="app-model">VGGNet / YOLO</div>
+      <div class="app-desc">Identifies pedestrians, traffic signs, and road lanes in real time</div>
+    </div>
+    <div class="app-card">
+      <div class="app-icon">✨</div>
+      <div class="app-name">AR Filters</div>
+      <div class="app-model">CNN</div>
+      <div class="app-desc">Detects facial landmarks to apply Instagram and Snapchat effects</div>
+    </div>
+    <div class="app-card">
+      <div class="app-icon">🛰</div>
+      <div class="app-name">Satellite Imagery</div>
+      <div class="app-model">ResNet</div>
+      <div class="app-desc">Maps land use and detects illegal deforestation from space</div>
+    </div>
+  </div>
+</section>
+<!-- GLOSSARY -->
+<section id="glossary">
+  <div class="reveal">
+    <div class="section-label">Section 06</div>
+    <h2 class="section-title">Key Concepts</h2>
+    <p class="section-desc">A quick-reference glossary of the essential terms you need to understand CNN literature.</p>
+  </div>
+  <div class="gloss-grid reveal">
+    <div class="gloss-card"><div class="gloss-term">CNN</div><div class="gloss-def">A neural network designed for processing image data, preserving 2D spatial structure.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Convolution</div><div class="gloss-def">A small filter slides over an image detecting features like edges and textures.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Pooling</div><div class="gloss-def">Reducing feature map size while keeping the most important information.</div></div>
+    <div class="gloss-card"><div class="gloss-term">ReLU</div><div class="gloss-def">Activation function f(x) = max(0,x) — solves vanishing gradient, 6× faster training.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Dropout</div><div class="gloss-def">Randomly switching off neurons during training to prevent overfitting.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Vanishing Gradient</div><div class="gloss-def">Gradients become too small to update early layers — deep networks grind to a halt.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Skip Connection</div><div class="gloss-def">A shortcut that lets gradients flow directly across layers — ResNet's core idea.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Transfer Learning</div><div class="gloss-def">Using a pre-trained CNN (like ResNet) as the starting point for a new task.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Overfitting</div><div class="gloss-def">Model memorises training data but fails on new, unseen examples.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Feature Map</div><div class="gloss-def">The output produced after applying a convolutional filter to an image.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Filter / Kernel</div><div class="gloss-def">A small matrix (e.g. 3×3) that detects specific patterns across an image.</div></div>
+    <div class="gloss-card"><div class="gloss-term">Inception Module</div><div class="gloss-def">Runs 1×1, 3×3, and 5×5 filters in parallel, letting the network pick the best.</div></div>
+  </div>
+</section>
+<!-- SUMMARY (dark) -->
+<div class="summary-section" id="summary">
+  <div class="summary-inner">
+    <div class="reveal">
+      <div class="section-label">Section 07</div>
+      <h2 class="section-title">The Journey, Summarised</h2>
+    </div>
+    <div class="timeline-summary reveal">
+      <div class="sum-item">
+        <div class="sum-year">1998</div>
+        <div class="sum-model">LeNet</div>
+        <div class="sum-text">Proved CNNs could work. 60K params, digits only.</div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-year">2012</div>
+        <div class="sum-model">AlexNet</div>
+        <div class="sum-text">Launched the deep learning era. ReLU changed everything.</div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-year">2014</div>
+        <div class="sum-model">VGGNet</div>
+        <div class="sum-text">Simple, uniform, deep. The people's architecture.</div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-year">2014</div>
+        <div class="sum-model">GoogLeNet</div>
+        <div class="sum-text">Efficiency matters. 27× fewer params, better results.</div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-year">2015</div>
+        <div class="sum-model">ResNet</div>
+        <div class="sum-text">Skip connections. 150+ layers. Beat humans at ImageNet.</div>
+      </div>
+    </div>
+    <div class="refs-section reveal">
+      <div class="refs-title">References</div>
+      <div class="refs-list">
+        <div class="ref-item">LeCun, Y. et al. (1998). Gradient-Based Learning Applied to Document Recognition. Proceedings of the IEEE, 86(11).</div>
+        <div class="ref-item">Krizhevsky, A., Sutskever, I., & Hinton, G. (2012). ImageNet Classification with Deep CNNs (AlexNet). NeurIPS.</div>
+        <div class="ref-item">Simonyan, K., & Zisserman, A. (2014). Very Deep Convolutional Networks for Large-Scale Image Recognition. ICLR 2015.</div>
+        <div class="ref-item">Szegedy, C. et al. (2014). Going Deeper with Convolutions (GoogLeNet/Inception). CVPR 2015.</div>
+        <div class="ref-item">He, K. et al. (2015). Deep Residual Learning for Image Recognition (ResNet). CVPR 2016.</div>
+        <div class="ref-item">LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep Learning. Nature, 521, 436–444.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Vishal Gowda &nbsp;·&nbsp; Roll No: 10348
+</footer>
+
+<button class="btt" id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+  const pb = document.getElementById('pb');
+  const btt = document.getElementById('btt');
+
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    pb.style.width = pct + '%';
+    btt.classList.toggle('show', h.scrollTop > 400);
+
+    document.querySelectorAll('.reveal').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.88) el.classList.add('visible');
+    });
+
+    document.querySelectorAll('.bar-fill').forEach(bar => {
+      const rect = bar.getBoundingClientRect();
+      if (rect.top < window.innerHeight) {
+        bar.style.width = bar.style.width;
+      }
+    });
+  });
+
+  document.querySelectorAll('.reveal').forEach((el, i) => {
+    el.style.transitionDelay = (i % 4) * 0.08 + 's';
+  });
+
+  setTimeout(() => {
+    document.querySelectorAll('.reveal').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.88) el.classList.add('visible');
+    });
+  }, 100);
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+</script>
+</body>
+</html>
